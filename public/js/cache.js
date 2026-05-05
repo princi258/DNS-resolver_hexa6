@@ -9,15 +9,44 @@ async function loadCache() {
   if (!area) return;
 
   try {
-    const res  = await fetch('/api/cache');
+    const res = await fetch('/api/cache');
+
+    if (!res.ok) {
+      throw new Error('Failed to fetch cache data');
+    }
+
     const data = await res.json();
     updateCacheCount(data.length);
 
-    if (!data.length) {
-      area.innerHTML = `<div class="empty"><div class="empty-icon">◎</div>
-        <p>No cached entries yet.<br>Resolve some domains first.</p></div>`;
+    // If no cache entries
+    if (!data || data.length === 0) {
+      area.innerHTML = `
+        <div class="empty">
+          <div class="empty-icon">📭</div>
+          <p>No cached entries yet.<br>
+          Try resolving some domains to see results here.</p>
+        </div>`;
       return;
     }
+
+  
+    area.innerHTML = data.map(item => `
+      <div class="cache-item">
+        <strong>${item.domain || 'Unknown'}</strong>
+        <span>${item.ip || 'N/A'}</span>
+      </div>
+    `).join('');
+
+  } catch (error) {
+    console.error('Error loading cache:', error);
+
+    area.innerHTML = `
+      <div class="error">
+        <div class="error-icon">⚠️</div>
+        <p>Unable to load cache data.<br>Please try again later.</p>
+      </div>`;
+  }
+}
 
     const rows = data.map(e => {
       const pct      = Math.round((e.ttlRemaining / e.ttl) * 100);
